@@ -1,0 +1,85 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
+
+const config = {
+	DISCORD_TOKEN: process.env.DISCORD_TOKEN,
+	CLIENT_ID: process.env.CLIENT_ID,
+	GUILD_ID: process.env.GUILD_ID
+};
+
+// Client setup.
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+async function initDatabase() {
+	const db = require('./utils/database/database.js');
+
+	try {
+		/*
+			     !!!! CHANGE THIS TO ALTER WHEN READY !!!!
+
+			Using force deletes and rebuilds every model each time.
+
+		*/
+		await db.sequelize.sync({
+			alter: true
+		});
+	}
+	catch (error) {
+		console.log(`[CRITICAL] Could not initialize database, shutting down!\n > ${error}`);
+		process.exit(1);
+	}
+
+	return db;
+}
+
+// Dynamic command handling.
+// eslint-disable-next-line no-shadow
+function initCommands(client) {
+	client.commands = new Collection();
+
+	const commandsParentPath = path.join(__dirname, 'commands');
+	const commandFolders = fs.readdirSync(commandsParentPath);
+
+	for (const folder of commandFolders) {
+		const commandsSubPath = path.join(commandsParentPath, folder);
+		const commandFiles = fs.readdirSync(commandsSubPath).filter((file) => file.endsWith('.js'));
+		for (const file of commandFiles) {
+			const filePath = path.join(commandsSubPath, file);
+			const command = require(filePath);
+
+			if ('data' in command && 'execute' in command) {
+				client.commands.set(command.data.name, command);
+			}
+			else {
+				console.log(`[WARNING] the command at ${filePath} is missing a required "data" or "execute" property.`);
+			}
+		};
+	};
+};
+
+// Dynamic event handling.
+// eslint-disable-next-line no-shadow
+function initEvents(client) {
+	eventsPath = path.join(__dirname, 'events');
+	eventsFiles = fs.readdirSync(eventsPath);
+
+	for (const file of eventsFiles) {
+		const filePath = path.join(eventsPath, file);
+		const event = require(filePath);
+
+		if (event.once) {
+			client.once(event.name, (...args) => event.execute(...args));
+		}
+		else {
+			client.on(event.name, (...args) => event.execute(...args));
+		}
+	};
+};
+
+// Load bot.
+initDatabase().then(() => {
+	initCommands(client);
+	initEvents(client);
+	client.login(config.DISCORD_TOKEN);
+});
