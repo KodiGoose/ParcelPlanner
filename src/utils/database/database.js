@@ -1,13 +1,14 @@
-const fs = require('node:fs');
 const path = require('node:path');
 const Sequelize = require('sequelize');
+
+const { PATHS } = require('#utils/path-helper.js');
 
 // Database setup.
 const sequelize = new Sequelize('database', 'user', 'password', {
 	host: 'localhost',
 	dialect: 'sqlite',
 	logging: false,
-	storage: path.join(process.cwd(), 'data', 'database.sqlite'),
+	storage: path.join(PATHS.data, 'database.sqlite'),
 	dialectOptions: {
 		foreignKeys: true
 	},
@@ -18,38 +19,55 @@ const sequelize = new Sequelize('database', 'user', 'password', {
 
 const db = { sequelize, Sequelize };
 
-const modelsDirectory = path.join(__dirname, 'models');
+function loadModel(modelPath) {
+	const modelImport = require(modelPath);
+	const model = modelImport(sequelize);
 
-function loadModels(baseDirectory) {
-	const items = fs.readdirSync(baseDirectory);
+	console.log(`[DATABASE] Loading model: ${model.name}`);
+	db[model.name] = model;
 
-	for (const item of items) {
-		const itemPath = path.join(baseDirectory, item);
+	return model;
+}
 
-		try {
-			if (fs.statSync(itemPath).isDirectory()) {
-				loadModels(itemPath);
-			}
-			else if (item.endsWith('.js')) {
-				const modelImport = require(itemPath);
-				const model = modelImport(sequelize);
+/*
+	Loads a model and immediately syncs the table.
+	May cause issues so likely will remove.
 
-				console.log(`[DATABASE] Loading model: ${model.name}`);
-				db[model.name] = model;
-			}
-		}
-		catch {
-			console.log(`[WARNING] Could not process ${itemPath} while initializing database.`);
-		}
-	};
-};
+function loadModelImmediately(modelPath) {
+	loadModel(modelPath);
 
-loadModels(modelsDirectory);
 
-Object.keys(db).forEach((modelName) => {
-	if (db[modelName].associate) {
-		db[modelName].associate(db);
+}*/
+
+function applyAssociations() {
+	Object.keys(db).forEach((modelName) => {
+		if (modelName?.toLowerCase() === 'sequelize') {
+			return;
+		};
+
+		if (db[modelName].associate) {
+			db[modelName].associate(db);
+		};
+	});
+}
+
+async function initDatabase() {
+	try {
+		await db.sequelize.sync({
+			alter: true
+		});
 	}
-});
+	catch (error) {
+		console.log(`[CRITICAL] Could not initialize database, shutting down!\n > ${error}`);
+		process.exit(1);
+	}
 
-module.exports = db;
+	return db;
+}
+
+module.exports = {
+	db,
+	loadModel,
+	applyAssociations,
+	initDatabase
+};

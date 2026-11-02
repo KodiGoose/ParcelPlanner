@@ -10,6 +10,10 @@ const config = {
 
 const commands = [];
 
+/*
+	THIS FILE IS OUTDATED AND NEEDS REMOVED OR COMPLETELY CHANGED.
+*/
+
 // Dynamic command handling.
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);

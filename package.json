@@ -1,7 +1,7 @@
 {
   "name": "parcelplanner",
   "version": "1.0.0",
-  "description": "Custom utility bot to help with events in TheHapiFox's Discord.",
+  "description": "Custom bot designed for TheHapiFox's Discord!",
   "homepage": "https://github.com/KodiGoose/ParcelPlanner#readme",
   "bugs": {
     "url": "https://github.com/KodiGoose/ParcelPlanner/issues"
@@ -18,7 +18,8 @@
     "deploy": "node --env-file=.env ./src/deploy-commands.js"
   },
   "imports": {
-    "#database/*": "./src/database/*",
+    "#src/*": "./src/*",
+    "#modules/*": "./src/modules/*",
     "#utils/*": "./src/utils/*"
   },
   "dependencies": {
@@ -29,7 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.12.0"
+    "eslint": "^10.14.0"
   },
   "allowScripts": {
     "sqlite3@6.0.1": true
