@@ -17,6 +17,5 @@ client.commands = new Collection();
 	Then login and connect to discord.
 */
 initializeBot(client).then(() => {
-	console.log('[DISCORD] Client is connected!');
 	client.login(config.DISCORD_TOKEN);
 });

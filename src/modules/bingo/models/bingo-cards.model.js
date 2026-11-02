@@ -27,7 +27,7 @@ module.exports = (sequelize) => {
 		status: {
 			type: DataTypes.STRING,
 			allowNull: false,
-			defaultValue: 'draft'
+			defaultValue: 'drafting'
 		},
 		submission_timestamp: {
 			type: DataTypes.DATE,
